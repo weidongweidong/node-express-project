@@ -1,15 +1,9 @@
-/*
- * @Descripttion: 
- * @Author: chenweidong
- * @Date: 2020-04-09 09:43:38
- * @LastEditors: chenweidong
- * @LastEditTime: 2020-04-10 13:30:44
- */
-
+const nodejieba = require("nodejieba");
 const articleDao = require('../models/article');
-const fs = require('fs');
 const path = require('path');
-
+const images = require('images');
+const svg2png = require('svg2png');
+const textToSVG = require('text-to-svg');
 exports.Serial1 = async (req, res, next) => {
     let result ={};
     try{
@@ -68,7 +62,6 @@ exports.Serial3 =async function(req,res,next){
         // 删
         res.clearCookie('name1')
 
-        
         result.title = aa;
         return res.render('index',result);
     }catch(e){
@@ -148,8 +141,78 @@ exports.Serial5 = async function(req,res,next){
         // fs.unlink('output.txt', function(){
         //     console.log("删除完成～");
         // })
-        
     }catch(e){
        next(e);
     }
 }
+
+exports.Serial6 = async function(req,res,next){
+    try{
+        let a = "abc"
+        // res.send(a);
+        res.write(a);
+        res.end();
+    }catch(e){
+        next(e);
+    }
+}
+
+exports.Serial7 = async function(req,res,next){
+    try{
+        // let keyword =  req.body.word;
+        // nodejieba.load({
+        //     userDict: __dirname + '/userdict.utf8'
+        // });
+        var sentence = "试管什么样的方案成功率高有什么不同";
+        var result;
+        var topN = 30;
+        result = nodejieba.extract(sentence, topN);
+        console.log(result);
+        result.forEach(function(a,index){
+            res.write(a.word +":"+a.weight + '\n');
+        });
+        res.end();
+    }catch(e){
+        next(e);
+    }
+}
+
+exports.Serial8 = async function(req,res,next){
+    try{
+
+        var _text = "联系人：xxx     手机号：13200000000";
+        var _url = "http://www.cnblogs.com/jaxu";
+        var _buffer = await genQrImage(_text, _url);
+        this.res.setHeader('Content-type', 'image/png');
+        this.body = _buffer;
+   
+
+       
+        res.end();
+    }catch(e){
+        next(e);
+    }
+}
+async function genQrImage(text, url) {
+    const tts = textToSVG.loadSync(path.join(__dirname, '../../utils/msyh.ttf'));
+    const tSvg = tts.getSVG(text, {
+        x: 0,
+        y: 0,
+        fontSize: 20,
+        anchor: 'top'
+    });
+    const margin = 35; // 二维码的左右边距
+    const top = 90; // 二维码距顶部的距离
+    var sourceImage = images(path.join(__dirname, '../utils/source.png'));
+    var w = sourceImage.width(); // 模板图片的宽度
+    return svg2png(tSvg)
+        .then((rst) => {
+            var textImage = images(rst);
+            var qrImage = images(qr.imageSync(url, {type: 'png'})).size(w - margin * 2); // 二维码的尺寸为：模板图片的宽度减去左右边距
+            return sourceImage
+                .draw(qrImage, margin, top) // 二维码的位置：x=左边距，y=top
+                .draw(textImage, (w - textImage.width()) / 2, top + qrImage.height() + 10) // 底部文字，x为居中显示，y=top+二维码的高度+10
+                .encode('png', {quality: 90});
+        })
+        .catch(e => console.error(e));
+};
