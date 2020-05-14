@@ -14,7 +14,7 @@ const articlesSchema = new mongoose.Schema({
         type: String
     }
 });
-var mongoUtil = mongoHelper.pool(settings.databases.local.name,settings.databases.local.config)
+var mongoUtil = mongoHelper.pool(settings.databases.text1.name,settings.databases.text1.config)
 const articlesModel = mongoUtil.model('articles',articlesSchema, 'articles');
 
 exports = module.exports = {

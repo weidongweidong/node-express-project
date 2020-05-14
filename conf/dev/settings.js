@@ -15,9 +15,13 @@ exports.logger = {
 };
 
 exports.databases = {
-    local:{
-        "name":"local",
-        "config":"mongodb://root:root@localhost:27017/local_zhuanzhen"
+    text1:{
+        "name":"text1",
+        "config":"mongodb://root:text1@localhost:27017/text1"
+    },
+    text2:{
+        "name":"text2",
+        "config":"mongodb://root:text2@localhost:27017/text2"
     },
 };
 
