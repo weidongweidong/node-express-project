@@ -1,9 +1,15 @@
 const nodejieba = require("nodejieba");
+const mongoose = require('mongoose');
 const articleDao = require('../models/article');
+const classDao = require('../models/class');
 const path = require('path');
 const images = require('images');
+const qr = require('qr-image');
 const svg2png = require('svg2png');
 const textToSVG = require('text-to-svg');
+const fs = require('fs')
+const gm = require('gm').subClass({imageMagick: true});//一定要加imageMagick: true，否则会报错
+
 exports.Serial1 = async (req, res, next) => {
     let result ={};
     try{
@@ -161,11 +167,12 @@ exports.Serial7 = async function(req,res,next){
     try{
         // let keyword =  req.body.word;
         // nodejieba.load({
-        //     userDict: __dirname + '/userdict.utf8'
+        //     idfDict: __dirname + '/idf.utf8'
         // });
-        var sentence = "试管什么样的方案成功率高有什么不同";
+        // 如果要是改词频， 需要去node_modules 里面弄。 idf.utf8
+        var sentence = "跪求菩萨保佑宫内好孕";
         var result;
-        var topN = 30;
+        var topN = 3;
         result = nodejieba.extract(sentence, topN);
         console.log(result);
         result.forEach(function(a,index){
@@ -179,22 +186,128 @@ exports.Serial7 = async function(req,res,next){
 
 exports.Serial8 = async function(req,res,next){
     try{
-
         var _text = "联系人：xxx     手机号：13200000000";
         var _url = "http://www.cnblogs.com/jaxu";
         var _buffer = await genQrImage(_text, _url);
-        this.res.setHeader('Content-type', 'image/png');
+        res.setHeader('Content-type', 'image/png');
         this.body = _buffer;
-   
-
-       
         res.end();
+    }catch(e){
+        console.log(e);
+        next(e);
+    }
+}
+
+exports.Serial9 = async function(req,res,next){
+    try{
+        // 创建一个图片，上面写上字
+        var defpath=path.join(__dirname,'../')
+        gm(200, 400, "#ddff99f3")
+        .drawText(10, 50, "hello world ")
+        .write(defpath + 'logs/white.png', function (err) {
+            console.log(err);
+        });
+        res.end();
+
+        // // 创建背景图片
+        // gm(1000, 1000, "#ffffff").fontSize(80).drawText(whidth, 950, name) 
+        // .write(static_url + '/white.png', function (err) {
+        //     // 合到一起
+        //     gm().command("composite")
+        //     .in("-gravity", "North")
+        //     .in(basePath)
+        //     .in('-page', '+10+20')
+        //     .in(static_url + '/white.png')
+        //     .write( static_url + '/basePath.png', function (err) {
+        //        if(!err){  
+        //          // 将生成的图片上传服务器
+        //          let readStrm = fs.createReadStream(static_url + '/basePath.png');
+        //          utils.uploadStream(readStrm, picNmae, function (img) {
+        //            fs.unlinkSync(static_url + '/basePath.png');
+        //            fs.unlinkSync(basePath);
+        //            fs.unlinkSync(static_url + '/white.png');
+        //            return res.json({data: {qrCode: img}, code: 0, msg: "success"})
+        //          });
+        //        }else{
+        //          console.log(err);
+        //        }
+        //     });
+        // });
     }catch(e){
         next(e);
     }
 }
+
+
+exports.Serial10 = async function(req,res,next){
+    try{
+        // 多表联查
+        let id = '5e8ecbaaf3ce279b58207f0b';
+
+        //  同库关联查询
+        // let re =  await articleDao.tongkupopulateOne(id);
+
+        //  异库关联查询
+        // let re =  await articleDao.yikupopulateOne(id);
+        // 同库查询的 lookup方法
+
+        //  aggregate聚合函数   lookup关联查询
+        let re =  await articleDao.aggregate([
+            //$toObjectId  将字符串转成objectid ，选择输出文档的字段，如果要哪个字段， 就设置  字段：1 
+            {$project:{class_id:{$toObjectId:"$class_id"},title:1,author:1}},   
+            // 使用关联符号，lookup form 从哪个表； localField:本表字段，foreignField：对应的外表字段， as 字段输出名字。
+            {$lookup:{from:"class",localField:"class_id",foreignField:"_id",as:"classFrom"}},
+            // 筛选符号， 条件写这， 
+            {$match:{_id: mongoose.Types.ObjectId(id)}},
+            // 排序
+            { $sort: {"data.total": -1} },
+            // 从第几个开始
+            { $skip: 0},
+            // 查多少
+            { $limit: 2},
+            // 字符串排序： 按中文排序
+            // { $collation: {"locale": "zh", numericOrdering:true}},
+            // 分组
+            // { $group: {
+                    // 声明分组后都有哪些字段  
+                    // _id 用谁
+            //       _id: "$yizhuId",
+                    // 第一次出现的这个字段 
+            //       yizhuId:{$first:"$yizhuId"},
+                    // 第一次出现的这个字段
+            //       data:{$first:"$data"},
+                     // 第一次出现的这个字段
+            //       createAt:{$first:"$createAt"}
+            //     }
+            //   }
+           ]);
+
+
+        
+        // 创建索引
+        // db.getCollection('articles').createIndex({author: 1}, {collation: {locale: "zh"}})
+
+        //查询语句， 按照 字符排序。 
+        //db.stock.find({}).collation({"locale": "zh", numericOrdering:true}).sort({‘字段名’:1})
+        
+        res.send(re);
+    }catch(e){
+        console.log(e);
+        next(e);
+    }
+}
+
+
+
+
+
+
+
+
+
+
 async function genQrImage(text, url) {
-    const tts = textToSVG.loadSync(path.join(__dirname, '../../utils/msyh.ttf'));
+    const tts = textToSVG.loadSync(path.join(__dirname, '../utils/msyh.ttf'));
     const tSvg = tts.getSVG(text, {
         x: 0,
         y: 0,
@@ -203,7 +316,7 @@ async function genQrImage(text, url) {
     });
     const margin = 35; // 二维码的左右边距
     const top = 90; // 二维码距顶部的距离
-    var sourceImage = images(path.join(__dirname, '../utils/source.png'));
+    var sourceImage = images(path.join(__dirname, '../utils/girl.png'));
     var w = sourceImage.width(); // 模板图片的宽度
     return svg2png(tSvg)
         .then((rst) => {

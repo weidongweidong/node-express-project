@@ -70,6 +70,20 @@ exports.aggregate = async function(model,array){
     })
 }
 
+exports.populateForTwo = async function (model, query, fields, options, populate) {
+    return new Promise((resolve, reject) => {
+      model.find(query, fields, options)
+        .populate(populate[0])
+        .exec(function (err, doc) {
+          if (err) {
+            reject(err)
+            return
+          }
+          resolve(doc)
+        })
+    })
+  }
+
 exports.distinct = async function(model, args, query) {
     return new Promise((resolve, reject) => {
         model.distinct(args, query, function(err,res) {
