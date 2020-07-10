@@ -1,9 +1,12 @@
 const nodejieba = require("nodejieba");
 const mongoose = require('mongoose');
 const articleDao = require('../models/article');
+const HttpUtil = require('../utils/http_util');
+var http=require('http');
 const classDao = require('../models/class');
+const readline = require('readline');
 const path = require('path');
-const images = require('images');
+// const images = require('images');
 const qr = require('qr-image');
 const svg2png = require('svg2png');
 const textToSVG = require('text-to-svg');
@@ -15,11 +18,12 @@ exports.Serial1 = async (req, res, next) => {
     try{
         let env = process.env.NODE_ENV;
         if(env == 'dev'){
-            result.title= '开发环境';
+            result.title= '1';
         }
         if(env == 'pro'){
-            result.title = '生产环境'; 
+            result.title = '2'; 
         }
+        result.arr = [1,2,3,4,5];
         return res.render('index',result);
     }catch(e){
         console.log(e);
@@ -166,9 +170,9 @@ exports.Serial6 = async function(req,res,next){
 exports.Serial7 = async function(req,res,next){
     try{
         // let keyword =  req.body.word;
-        // nodejieba.load({
-        //     idfDict: __dirname + '/idf.utf8'
-        // });
+        nodejieba.load({
+            idfDict: __dirname + '/idf.utf8'
+        });
         // 如果要是改词频， 需要去node_modules 里面弄。 idf.utf8
         var sentence = "跪求菩萨保佑宫内好孕";
         var result;
@@ -239,13 +243,14 @@ exports.Serial9 = async function(req,res,next){
 }
 
 
+
 exports.Serial10 = async function(req,res,next){
     try{
         // 多表联查
         let id = '5e8ecbaaf3ce279b58207f0b';
 
         //  同库关联查询
-        // let re =  await articleDao.tongkupopulateOne(id);
+        let re =  await articleDao.tongkupopulateOne(id);
 
         //  异库关联查询
         // let re =  await articleDao.yikupopulateOne(id);
@@ -297,12 +302,105 @@ exports.Serial10 = async function(req,res,next){
     }
 }
 
+exports.Serial12 = async function(req,res,next){
+    try{
 
+        let arr =[];
+        var readstream = fs.createReadStream(__dirname+'/urls.txt');
+        
+        //创建逐行读取
+        var rl = readline.createInterface({
+            input:readstream
+        })
+        //读行
+        rl.on('line',function(data){
+            arr.push(data);
+        }).on('close',async function(){
+            //结束后调用的
+            console.log(arr);
+            // let url ="https://cloud.haoyunbang.cn/api/baidu/shoulu";
+            let url = 'http://127.0.0.1:8012/baidu/shoulu';
+            var opt = {
+                method: "POST",
+                url: url,
+                json: true,
+                form: {urls: arr.join(',')}
+            };
+            let result =  await HttpUtil.httpPost(opt);
+            console.log(result);
+            res.send(result|| '空的');
+        })
+    }catch(e){
+        conso.log(e);
+        next(e)
+    }
+}
+exports.Serial13 = async function(req,res,next){
+    
+    try{
+        let a =  {};
+        try{
+            let b = a.bb.cc;
+        }catch(e){
+            console.log("里面的错："+e);
+        }
+        console.log("abcdefg")
 
+    }catch(e){
+        console.log("外面的错："+e);
+    }
+    //结果： 
+    /**下面为打印结果:
+     * 里面的错：TypeError: Cannot read property 'cc' of undefined   textController.js:343
+               abcdefg
+     */
+}
 
+exports.Serial11 = async function(req,res,next){
+    try{
 
-
-
+        console.log(__dirname);
+        //定义分割后每个文件的行数
+        var rows = 2000;
+        //用来存储结果的变量
+        var arr=[];
+        //创建文件流    //要分割的文件
+        var readstream = fs.createReadStream(__dirname+'/urls.txt');
+        //创建逐行读取
+        var rl = readline.createInterface({
+            input:readstream
+        })
+        //读行
+        rl.on('line',function(data){
+            arr.push(data);
+        }).on('close',function(){//结束后调用的
+            for (var i=0;i<Math.ceil(arr.length/rows);i++) {
+                let start =  i*rows;
+                let end =  i*rows+rows;
+                fs.writeFile(__dirname+'/urls_<'+start +','+end+'>.txt',arr.slice(start,end).join('\r\n'),function(){
+                    //读取当前文件，请求， 然后删除这个文件， 
+                    let file = fs.readFileSync(__dirname+'/urls_<'+start +','+end+'>.txt');
+                    // 内容
+                    file = file.toString();
+                    // 请求  file是请求的参数
+                    postBaidu();
+                    //响应参数
+                    if(1){
+                        // 请求成功后 打印结果， 并删除该文件
+                        fs.unlinkSync(__dirname+'/urls_<'+start +','+end+'>.txt')
+                        console.log(start+'到'+end+"行数据提交成功！");
+                    }else{
+                        console.log(start+'到'+end+"行数据提交失败！  文件:urls_<"+start+","+end+">.txt已保存在目录下 失败的文件请单独提交");
+                        console.log('错误信息为:err');
+                    }
+                });
+            }
+        })
+        
+    }catch(e){
+        console.log(e);
+    }
+}
 
 
 
@@ -316,7 +414,7 @@ async function genQrImage(text, url) {
     });
     const margin = 35; // 二维码的左右边距
     const top = 90; // 二维码距顶部的距离
-    var sourceImage = images(path.join(__dirname, '../utils/girl.png'));
+    var sourceImage = '' // images(path.join(__dirname, '../utils/girl.png'));
     var w = sourceImage.width(); // 模板图片的宽度
     return svg2png(tSvg)
         .then((rst) => {
@@ -329,3 +427,30 @@ async function genQrImage(text, url) {
         })
         .catch(e => console.error(e));
 };
+
+async function postBaidu(){
+   
+    var bodyString = 'https://m.haoyunbang.cn/topic/info/5ec87b5ab4202e0077a413b5';
+    
+    var headers = {
+        'Content-Type': 'text/plain',
+        'Content-Length': bodyString.length
+    };
+    
+    var options = {
+        host: 'data.zz.baidu.com',
+        path: '/urls?site=https://m.haoyunbang.cn&token=7yo16nMlHys9545x',
+        method: 'POST',
+        headers: headers
+    };
+    
+    var req = http.request(options, function (res) {
+        res.setEncoding('utf-8');
+    
+        res.on('data', function (data) {
+            console.log('结果:', data);
+        });
+    });
+    req.write(bodyString);
+    req.end();
+  }

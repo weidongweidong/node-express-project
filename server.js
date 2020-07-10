@@ -14,6 +14,7 @@ if (_.isUndefined(NODE_ROUTER)) {
 }
 
 const settings = require(`./conf/${NODE_ENV}/settings`);
+const nodejieba = require("nodejieba");
 const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
@@ -26,6 +27,10 @@ const winston         = require('winston');
 const expressWinston  = require('express-winston');
 const log = require('./logger.js');
 
+console.log(__dirname)
+nodejieba.load({
+  idfDict: __dirname + '/controllers/idf.utf8'
+});
 
 var app = express();
 

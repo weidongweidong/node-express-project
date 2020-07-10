@@ -6,9 +6,9 @@
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
   <body>
-    {@eq key=title value="开发环境"}
-    <h1>{title}</h1>
-    {/eq}
+    {#arr}
+    <h1>{.}</h1>
+    {/arr}
     <p>Welcome to {title}</p>
     
   </body>

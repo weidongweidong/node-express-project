@@ -12,6 +12,7 @@ router.get("/Serial7",textController.Serial7)//  fenci
 router.get("/Serial8",textController.Serial8)// 
 router.get("/Serial9",textController.Serial9)// gm 画图片
 router.get("/Serial10",textController.Serial10)//  mongdb  多表联查 同库， 异库， 聚合， 关联
-
-
+router.get("/Serial11",textController.Serial11)//   读文件， 调用百度接口
+router.get("/Serial12",textController.Serial12)//  调用百度接口脚本
+router.get("/Serial13",textController.Serial13)//  调用百度接口脚本
 module.exports = router;
