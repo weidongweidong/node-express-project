@@ -7,6 +7,9 @@ const classSchema = new mongoose.Schema({
     name: { 
         type: String
     },
+    tiem: {
+        type: Date
+    }
 });
 var mongoUtil = mongoHelper.pool(settings.databases.text1.name,settings.databases.text1.config)
 const classModel = mongoUtil.model('class',classSchema, 'class');
@@ -45,4 +48,9 @@ exports = module.exports = {
         let result = await mongoHelper.populateOne(classModel, {_id:id});
         return result
     },
+    find: async function(query){
+        let result = await mongoHelper.find(classModel,query);
+        return result
+    },
+     
 }

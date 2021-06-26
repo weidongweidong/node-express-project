@@ -14,7 +14,6 @@ if (_.isUndefined(NODE_ROUTER)) {
 }
 
 const settings = require(`./conf/${NODE_ENV}/settings`);
-const nodejieba = require("nodejieba");
 const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
@@ -27,18 +26,25 @@ const winston         = require('winston');
 const expressWinston  = require('express-winston');
 const log = require('./logger.js');
 
-console.log(__dirname)
-nodejieba.load({
-  idfDict: __dirname + '/controllers/idf.utf8'
-});
+
+// console.log(__dirname)
+// nodejieba.load({
+//   idfDict: __dirname + '/controllers/idf.utf8'
+// });
 
 var app = express();
-
 // view engine setup  dust
 // 设置dust模版
-app.engine('dust', adaro.dust());
+// app.engine('dust', adaro.dust());
+// app.set('views', path.join(__dirname, 'views'));
+// app.set('view engine', 'dust');
+
 app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'dust');
+app.set('view engine', 'html');
+app.engine('html',require('ejs-mate'));
+app.locals._layoutFile = "layout.html";
+
+
 // // 日志设置
 // app.use(logger('dev'));
 // 设置通过js向后台post一些文件信息时 的文件大小；
@@ -163,8 +169,3 @@ function onListening() {
   debug('Listening on ' + bind);
 }
 
-dev1
-de111333331v2// 这是我新加上的代码，和mater 不一样的。 
-d// 这是我新加上的代码，和mater 不一样的。 ev3
-de// 这是我新加上的代码，和mater 不一样的。 v1114
-// 这是我新加上的代码，和mater 不一样的。 

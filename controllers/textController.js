@@ -1,18 +1,216 @@
-const nodejieba = require("nodejieba");
+
 const mongoose = require('mongoose');
 const articleDao = require('../models/article');
 const HttpUtil = require('../utils/http_util');
 var http=require('http');
 const classDao = require('../models/class');
+const moment = require('moment');
 const readline = require('readline');
 const path = require('path');
 // const images = require('images');
 const qr = require('qr-image');
+const request = require("request");
 const svg2png = require('svg2png');
 const textToSVG = require('text-to-svg');
-const fs = require('fs')
+const fs = require('fs');
+const { trimEnd } = require("lodash");
 const gm = require('gm').subClass({imageMagick: true});//一定要加imageMagick: true，否则会报错
+const log4js = require('log4js');
+const log4js_redis = require("@log4js-node/redis");
 
+
+function mylayout(config) {
+    return function (logEvent) {
+        const arr = logEvent.data;
+        let throwable = "";
+        let normalMsg = "";
+        arr.forEach(e => {
+            if (e && e.message && e.stack) {
+                throwable = Object.assign({message: e.message, stack: e.stack});
+            } else {
+                if (e && typeof e == "object") {
+                    normalMsg += "  " + JSON.stringify(e);
+                } else {
+                    normalMsg += "  " + e;
+                }
+            }
+        })
+        const message = {
+            createTime: logEvent.startTime,
+            level: logEvent.level.levelStr,
+            message: normalMsg,
+            platform: "Nodejs",
+            serverIp: getIPAdress(),
+            serverName: appName,
+            type: "redis-logs",
+            throwable: throwable ? JSON.stringify(throwable) : "",
+        };
+        return message;
+    }
+}
+
+function getIPAdress() {
+    if (localIp) return localIp;
+    let localIPAddress = "";
+    let interfaces = os.networkInterfaces();
+    for (let devName in interfaces) {
+        let iface = interfaces[devName];
+        for (let i = 0; i < iface.length; i++) {
+            let alias = iface[i];
+            if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) {
+                localIPAddress = alias.address;
+            }
+        }
+    }
+    localIp = localIPAddress;
+    return localIPAddress;
+}
+exports.for = async (req, res, next) =>{
+    while(1==1){
+        console.log("11");
+    }
+   
+}
+
+exports.add = async (req, res, next) =>{
+   let aa =   moment(new Date()).format("YYYY-MM-DD HH:mm:ss");
+   console.log(aa);
+    // await classDao.insert({name: "new Date()",tiem : new Date()});
+   let bb= await classDao.find({ tiem : moment("2021-06-08 15:00:00")});
+   console.log(bb);
+   res.send({a
+    : "hello "});
+}
+
+
+let send = {
+    'Error:':'查询失败',
+    'code':400,
+}
+
+exports.douyin = async (req, res, next)=>{
+
+    let { url } = req.query;
+    url = httpString(url);
+
+    //前端传过来的地址 进行重定向拿到 item_ids 并且返回
+    let watermark = await new Promise(resolve=>{
+        request(url,(error, response, body) => {
+            if (!error && response.statusCode == 200) {
+                let href = response.request.href;
+                let id = void 0;
+                try {
+                    id = href.match(/video\/(\S*)\/\?region/);
+                } catch (error) {
+                    res.json(send)
+                    return false;
+                }
+                resolve(`https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${id}`);
+            }else{
+                res.json(send)
+            }
+        })
+    });
+
+    //拿到完整地址返回指定数据 
+    request(watermark,async (error, response, body)=>{
+        if (!error && response.statusCode == 200) {
+
+            let result = JSON.parse(body);
+            let data = result.item_list[0];
+            //视频url解析
+            let video = await videourl(data['video']["play_addr"]["url_list"][0]);
+            // 拼接返回指定数据
+            res.json({
+                'title':data["share_info"]["share_title"],
+                'cover':data['video']["origin_cover"]["url_list"][0],
+                'video':video,
+                'audio':data['music']["play_url"]["uri"],
+                'code':200,
+            })
+        }else{
+            res.json(send)
+        }
+    })
+}
+
+//解析视频
+const videourl = async (url)=>{
+    //截取字符串 wm
+    url = url.replace(/wm/g,'');
+    return await new Promise(resolve=>{
+        request(url,(error, response, body) => {
+            resolve(response.request.href)
+        })
+    })
+}
+
+//解析字符串里面的url
+const httpString = (s) =>{
+    let reg = /(https?|http|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]/g;
+    try {
+        return s.match(reg)[0];
+    } catch (error) {
+        return null;
+    }
+}
+
+exports.aline = async (req, res, next) =>{
+    res.send({a
+     : "hello "});
+}
+
+
+
+exports.log=  async (req, res,next)=>{
+     try{
+        log4js.addLayout("mylog", mylayout())
+        log4js.configure({
+            "appenders": {
+                "stdout": {"type": "console", layout: {type: "mylog"}},
+                "mylog": {
+                    type: "@log4js-node/redis",
+                    host: "172.17.20.151",
+                    port: 6379,
+                    pass: "",
+                    channel: this.appName,
+                    layout: {
+                        type: "mylog"
+                    }
+                }
+            },
+            categories: {
+            default: {"appenders": ["stdout"], "level": "debug"},
+                mylog: {"appenders": ["mylog"], "level": "info"}
+            },
+            replaceConsole: true
+        });
+        const logger = log4js.getLogger("text");
+
+
+        logger.info("log 测试");
+     }catch(e){
+        console.log(e);
+     }
+}
+
+exports.Serial14 = async (req, res, next) => {
+    let result ={};
+    try{
+        let env = process.env.NODE_ENV;
+        if(env == 'dev'){
+            result.title= '1';
+        }
+        if(env == 'pro'){
+            result.title = '2'; 
+        }
+        result.arr = [1,2,3,4,5];
+        return res.render('index',result);
+    }catch(e){
+        console.log(e);
+        throw e;
+    }
+}
 exports.Serial1 = async (req, res, next) => {
     let result ={};
     try{
@@ -37,11 +235,13 @@ exports.Serial2 =async function(req,res,next){
         //添加
         // let re =  await articleDao.insert({title:"测试",author:"陈伟东",url:"www.baidu.com"});
         //查询
-        let re =  await articleDao.list();
+        // let re =  await articleDao.list();
         //修改
         // let re =  await articleDao.update("5e8ecb3eebc65e9b3e170591",{title:"title"});
         //删除
         // let re =  await articleDao.delete("5e8ecba9f3ce279b58207f0a");
+        let arr = [{title:"测试批量插入",author:"陈伟东",url:"www.baidu.com"},{title:"测试批量插入1",author:"陈伟东",url:"www.baidu.com"},{title:"测试批量插入2",author:"陈伟东",url:"www.baidu.com"}];
+        let re = await articleDao.insertMany(arr);
         result.title = re;
         return res.render('index',result);
     }catch(e){
@@ -257,7 +457,7 @@ exports.Serial10 = async function(req,res,next){
         // 同库查询的 lookup方法
 
         //  aggregate聚合函数   lookup关联查询
-        let re =  await articleDao.aggregate([
+        let res =  await articleDao.aggregate([
             //$toObjectId  将字符串转成objectid ，选择输出文档的字段，如果要哪个字段， 就设置  字段：1 
             {$project:{class_id:{$toObjectId:"$class_id"},title:1,author:1}},   
             // 使用关联符号，lookup form 从哪个表； localField:本表字段，foreignField：对应的外表字段， as 字段输出名字。
@@ -332,6 +532,25 @@ exports.Serial12 = async function(req,res,next){
         })
     }catch(e){
         conso.log(e);
+        next(e)
+    }
+}
+exports.hello = async function(req,res,next){
+    try{
+        let date =  moment(new Date()).format("YYYY-MM-DD HH:mm:ss");
+        let hello = {
+            dev:{
+               aa:date
+            },
+            pro:{
+               aa:2
+            }
+        }
+        console.log(date);
+
+        return res.send(hello);
+    }catch(e){
+        console.log(e)
         next(e)
     }
 }

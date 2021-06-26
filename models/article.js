@@ -34,6 +34,9 @@ var mongoUtil = mongoHelper.pool(settings.databases.text2.name,settings.database
 const text2_classModel = mongoUtil.model('class',text2_classSchema, 'class');
 
 exports = module.exports = {
+    insertMany : async function(arr){
+       return await articlesModel.insertMany(arr);
+    },
     list: async function(query,page,limit,sort){
         let options = {};
         if(!sort) {

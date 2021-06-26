@@ -6,22 +6,13 @@
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
   <body>
-    {#arr}
-    <h1>{.}</h1>
-    {/arr}
-    <p>Welcome to {title}</p>
+    <%- body%>
     <button class="buttonTJ">点击</button>
-    
   </body>
 </html>
-<h1>我是master分支中提交上去的<h1>
-<h1>我是master分支中再次提交上去的<h1>
-<h1>我是test1分支中提交上去的<h1>
-<h1>我是test1分支中再次提交上去的<h1>
-<h1>我是test2分支中提交上去的<h1>
-
 <script>
   (function (w, d, e, x) {
+    console.log("1");
     w[e] = function () {
       w.cbk = w.cbk || [];
       w.cbk.push(arguments);
